@@ -1,3 +1,13 @@
+Mon Feb 16 07:35:28 2026  Rob Lauer  <rclauer@gmail.com>
+
+	[2.0.3]:
+	* VERSION: bump
+	* Makefile: minor fixes to build all artifacts
+	* README.md: generated
+	* lib/Markdown/Render.pm.in
+	- whitespace
+	(print_html): initialize $head_section
+
 Tue Feb  3 16:30:18 2026  Rob Lauer  <rclauer@gmail.com>
 
 	[2.0.2]:

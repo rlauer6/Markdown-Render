@@ -7,7 +7,7 @@ VERSION := $(shell cat VERSION)
 FILES = \
     README.md.in
 
-all: md-utils $(MARKDOWN) $(HTML)
+all: md-utils markdown html
 
 MARKDOWN=$(FILES:.md.in=.md)
 HTML=$(MARKDOWN:.md=.html)
@@ -20,22 +20,26 @@ $(HTML): $(MARKDOWN)
 	bin/md-utils.pl -r $< > $@ || (rm -f $@ && false);
 
 .PHONY: md-utils
-
 md-utils: bin/md-utils.pl lib/Markdown/Render.pm
 
+.PHONY: markdown
 markdown: $(MARKDOWN)
 
+.PHONY: html
 html: $(HTML)
 
 .PHONY: cpan
-
 cpan:
 	cd cpan && $(MAKE)
 
 lib/Markdown/Render.pm: lib/Markdown/Render.pm.in
 	sed -e 's/[@]PACKAGE_VERSION[@]/$(VERSION)/' < $< > $@
 
-bin/md-utils.pl: bin/md-utils.pl.in
+PERLSCRIPTS = bin/md-utils.pl.in
+
+GPERLSCRIPTS = $(PERLSCRIPTS:.pl.in=.pl)
+
+$(GPERLSCRIPTS): % : %.in
 	sed -e 's/[@]PACKAGE_VERSION[@]/$(VERSION)/' < $< > $@
 	chmod +x $@
 
@@ -46,4 +50,4 @@ clean:
 	rm -rf cpan/lib
 	rm -rf cpan/bin
 	rm -rf cpan/t
-	rm -f cpan/README.md
+	rm -f cpan/README.md cpan/*.tar.gz
