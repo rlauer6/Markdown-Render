@@ -64,6 +64,7 @@ $(TARBALL): $(GPERL_MODULES) $(GPERL_SCRIPTS) $(EXTRA) extra
 	   -m $(MODULE) \
 	   -a $(AUTHOR) \
 	   -d $(DESCRIPTION) \
+           -D requires \
 	   -H .
 
 README.md: ../README.md.in
@@ -84,8 +85,6 @@ CLEANFILES =  \
     $(TARBALL) \
     README.md \
     ChangeLog \
-    requires \
-    provides \
     extra
 
 PHONY: clean

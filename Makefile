@@ -19,6 +19,8 @@ $(MARKDOWN): % : %.in md-utils
 $(HTML): $(MARKDOWN)
 	bin/md-utils.pl -r $< > $@ || (rm -f $@ && false);
 
+include release-notes.mk
+
 .PHONY: md-utils
 md-utils: bin/md-utils.pl lib/Markdown/Render.pm
 
