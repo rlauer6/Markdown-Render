@@ -1,4 +1,3 @@
-#!/usr/bin/env perl
 package Markdown::Render::CLI;
 
 use strict;
@@ -8,11 +7,10 @@ use Carp;
 use Cwd;
 use Config::Tiny;
 use CLI::Simple::Constants qw(:chars :booleans);
+use CLI::Simple::Utils qw(choose);
 use Data::Dumper;
 use English qw(-no_match_vars);
 use File::Basename;
-use Getopt::Long qw(:config no_ignore_case auto_abbrev);
-use Readonly;
 
 use Markdown::Render;
 
@@ -20,11 +18,7 @@ our $VERSION = '@PACKAGE_VERSION@';
 
 use parent qw(CLI::Simple);
 
-########################################################################
-sub choose(&) { ## no critic
-########################################################################
-  return $_[0]->();
-}
+caller or exit __PACKAGE__->main();
 
 ########################################################################
 sub cmd_version {
@@ -195,18 +189,16 @@ sub main {
 
   my %commands = ( version => \&cmd_version, render => \&cmd_render );
 
-  my $cli = Markdown::Render::CLI->new(
+  my $cli = __PACKAGE__->new(
     option_specs    => \@option_specs,
     commands        => \%commands,
     default_options => { body => $TRUE, },
     extra_options   => [qw(git_email html)],
-  );
+  )->run();
 
   return $cli->run();
 
 }
-
-exit main();
 
 __END__
 
