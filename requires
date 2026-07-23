@@ -1,0 +1,13 @@
++IO::Socket 0
++Net:SSLeay 0
+CLI::Simple 2.1.1
+CLI::Simple::Constants 2.1.1
+CLI::Simple::Utils 2.1.1
+Class::Accessor::Fast 0.51
+Config::Tiny 2.30
+Date::Format 2.24
+HTTP::Tiny 0.088
+IO::Interactive 1.027
+IO::Scalar 2.113
+JSON 4.10
+Readonly 2.05

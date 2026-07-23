@@ -1,2 +1,13 @@
-requires "Markdown::Render", "2.0.4";
-requires "LWP", "";
+requires "CLI::Simple", "2.1.1";
+requires "CLI::Simple::Constants", "2.1.1";
+requires "CLI::Simple::Utils", "2.1.1";
+requires "Class::Accessor::Fast", "0.51";
+requires "Config::Tiny", "2.30";
+requires "Date::Format", "2.24";
+requires "HTTP::Tiny", "0.088";
+requires "IO::Interactive", "1.027";
+requires "IO::Scalar", "2.113";
+requires "IO::Socket", "0";
+requires "JSON", "4.10";
+requires "Net:SSLeay", "0";
+requires "Readonly", "2.05";

@@ -82,6 +82,8 @@ sub cmd_render {
 
   my $markdown;
 
+  require IO::Interactive;
+
   my $infile = $self->get_infile;
 
   if ( !$infile ) {
@@ -89,7 +91,7 @@ sub cmd_render {
 
     my $fh = choose {
       return *STDIN
-        if !$infile && !-t STDIN;
+        if !$infile && !IO::Interactive::is_interactive;
 
       open my $fh, '<', $infile
         or croak sprintf "ERROR: could not open %s for reading\n%s", $infile, $OS_ERROR;
