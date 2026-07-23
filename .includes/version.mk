@@ -16,11 +16,11 @@ version:
 	echo $$v >VERSION;
 	@cat VERSION
 
-release:
+release: ## bump the patch version (major.minor.patch)
 	@$(MAKE) -s version bump=release
 
-minor:
+minor: ## bump the minor version (major.minor.patch)
 	@$(MAKE) -s version bump=minor
 
-major:
+major: ## bump the major version (major.minor.patch)
 	@$(MAKE) -s version bump=major

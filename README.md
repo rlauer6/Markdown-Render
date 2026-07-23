@@ -1,269 +1,158 @@
 # Table of Contents
 
-* [README](#readme)
-* [Installation](#installation)
-  * [Prerequisites](#prerequisites)
-  * [Building and Deploying](#building-and-deploying)
-  * [Building from CPAN](#building-from-cpan)
-* [Usage](#usage)
-* [Tips & Tricks](#tips--tricks)
-  * [&#64;DATE(format)&#64;](#dateformat)
-  * [&#64;GIT_EMAIL&#64;](#gitemail)
-  * [&#64;GIT_USER&#64;](#gituser)
-  * [&#64;TOC&#64;](#toc)
-  * [&#64;TOC_BACK(optional text)&#64;](#tocbackoptional-text)
-  * [Custom TOC Title](#custom-toc-title)
-  * [Prevent heading from being included in table of contents](#prevent-heading-from-being-included-in-table-of-contents)
-* [Rendering](#rendering)
-* [License](#license)
-
-__Updated 2026-07-23__ by anonymouse <rclauer@gmail.com>
-
-# README
-
-A quick search regarding how to get a table of contents into my
-markdown yielded only a few hits or projects that seemed a little weighty
-to me, so here's a little Perl script with just a few
-dependencies that you might find useful.  See [Usage](#usage) for more
-information.
-
-The script will render your markdown as HTML using either the [GitHub
-API](https://docs.github.com/en/rest/markdown) or the Perl module [Text::Markdown::Discount](https://metacpan.org/pod/Text::Markdown::Discount)
+* [NAME](#name)
+* [SYNOPSIS](#synopsis)
+* [DESCRIPTION](#description)
+* [METHODS AND SUBROUTINES](#methods-and-subroutines)
+  * [new](#new)
+  * [finalize\_markdown](#finalize\markdown)
+  * [render\_markdown](#render\markdown)
+  * [print\_html](#print\html)
+* [AUTHOR](#author)
+* [LICENSE](#license)
+* [SEE OTHER](#see-other)
+# NAME
 
-A default stylesheet will be applied but you can provide your own
-style sheet as well.
+Markdown::Render - Render markdown as HTML
 
-# Installation
+# SYNOPSIS
 
-## Prerequisites
+    use Markdown::Render;
 
-The script has been tested with these versions, but others might work
-too.
+    my $md = Markdown::Render->new( infile => 'README.md');
 
-| Module                   | Version |
-|--------------------------|---------|
-| `CLI::Simple             | 1.0.11 |
-| `Class::Accessor::Fast`  | 0.51  |
-| `Config::Tiny`           | 2.30  |
-| `Date::Format`           | 2.24  |
-| `HTTP::Request`          | 6.00  |
-| `IO::Scalar`             | 2.113 |
-| `IO::Socket::SSL`        | |
-| `JSON`                   | 4.03  |
-| `HTTP::Tiny`             | 6.36  |
-| `Net::SSLeay`            | |
-| `Readonly`               | 2.05  |
-
-## Building and Deploying
-
-The build will now create a CPAN distribution.
-
-```
-git clone https://github.com/rlauer6/markdown-utils.git
-make && make cpan
-```
-
-To deploy the application use `cpanm`
-
-```
-curl -L https://cpanmin.us | perl - --sudo App::cpanminus
-cpanm -n -v cpan/Markdown-Render-*.tar.gz
-```
-
-## Building from CPAN
-
-```
-cpanm -v Markdown::Render
-```
-
-# Usage
-
-```
-Usage:
-     md-utils.pl options [markdown-file]
-
-    Utility to add a table of contents and other goodies to your GitHub
-    flavored markdown.
-
-    *   @TOC@ where you want to see your TOC.
-
-    *   @TOC_BACK@ to insert an internal link to TOC
-
-    *   @DATE(format-str)@ where you want to see a formatted date
-
-    *   @GIT_USER@ where you want to see your git user name
-
-    *   @GIT_EMAIL@ where you want to see your git email address
-
-    *   the --render option to render the HTML for the markdown
-
-  Examples:
-     md-utils.pl README.md.in > README.md
-
-     md-utils.pl -r README.md.in
-
-  Options:
-     -B, --body     default is to add body tag, use --nobody to prevent    
-     -b, --both     interpolates intermediate file and renders HTML
-     -c, --css      css file
-     -e, --engine   github, text_markdown (default: github)
-     -h             help
-     -i, --infile   input file, default: STDIN
-     -m, --mode     for GitHub API mode is 'gfm' or 'markdown' (default: markdown)
-     -n, --no-titl  do not print a title for the TOC
-     -o, --outfile  outfile, default: STDOUT
-     -r, --render   render only, does NOT interpolate keywords
-     -R, --raw      return raw HTML from engine
-     -t, --title    string to use for a custom title, default: "Table of Contents"
-     -v, --version  version
-     -N, --nocss    do not add any CSS link
-
-  Tips:
-    *   Use !# to prevent a header from being include in the table of
-        contents.
-
-        Add your own custom back to TOC message @TOC_BACK(Back to Index)@
-
-    *   Date format strings are based on format strings supported by the
-        Perl module 'Date::Format'.
-
-        The default format is %Y-%m-%d if not format is given.
+    $md->render_markdown->print_html;
 
-    *   use the --nobody tag to return the HTML without the
-        <html><body></body></html> wrapper.
+...or from the command line to create HTML
 
-        "--raw" mode will also return HTML without wrapper.
-```
+    md-utils.pl -r README.md > README.html
 
-# Tips & Tricks
+...or from the command line to replace render custom tags
 
-1. Add &#64;TOC&#64; somewhere in your markdown
-1. Use !# to prevent heading from being part of the table of contents
-1. Finalize your markdown...
-   ```
-   cat README.md.in | md-utils.pl > README.md
-   ```
-1. ...or...kick it old school with a `Makefile` if you like
-   ```
-   FILES = \
-       README.md.in
+    md-utils.pl README.md.in > README.md
 
-   MARKDOWN=$(FILES:.md.in=.md)
-   HTML=$(MARKDOWN:.md=.html)
-   
-   # interpolate the custom markdown keywords
-   $(MARKDOWN): % : %.in
-       md-utils $< > $@
-   
-   $(HTML): $(MARKDOWN)
-       md-utils -r $< > $@
-   
-   all: $(MARKDOWN) $(HTML)
-   
-   markdown: $(MARKDOWN)
-   
-   html: $(HTML)
-   
-   clean:
-       rm -f $(MARKDOWN) $(HTML)
-   ```
-1. ...and then...
-    ```
-    make all
-    ```
+# DESCRIPTION
 
-## &#64;DATE(format)&#64;
+Renders markdown as HTML using either GitHub's API or
+[Text::Markdown::Discount](https://metacpan.org/pod/Text%3A%3AMarkdown%3A%3ADiscount). Optionally adds additional metadata to markdown
+document using custom tags.
 
-Add the current date using a custom format.  Essentially calls the
-Perl function `time2str`.  See `perldoc Date::Format`.
+See
+[README.md](https://github.com/rlauer6/markdown-utils/blob/master/README.md)
+for more details.
 
-If no format is present the default is %Y-%m-%d (YYYY-MM-DD).
+_Note: This module originally used [Text::Markdown](https://metacpan.org/pod/Text%3A%3AMarkdown) as an
+alternative to using the GitHub API however, there are too many bugs
+and idiosyncracies in that module. This module will now use
+[Text::Markdown::Discount](https://metacpan.org/pod/Text%3A%3AMarkdown%3A%3ADiscount) which is not only faster, but seems to be
+more compliant with GFM._
 
-_Best practice would be to use a `Makefile` to generate your final
-`README.md` from your `README.md.in` template as shown
-[above](#usage) and generate your `README.md` as the last step before
-pushing your branch to a repository._
+_Note: Text::Markdown::Discount relies on the text-markdown library
+which did not actually support all of the markdown features (including
+code fencing).  You can find an updated version of
+[Text::Markdown::Discount](https://metacpan.org/pod/Text%3A%3AMarkdown%3A%3ADiscount) here:
+[https://github.com/rlauer6/text-markdown-discount](https://github.com/rlauer6/text-markdown-discount)_
 
-Example:
+# METHODS AND SUBROUTINES
 
-&#64;`DATE(%Y-%m-%d)`&#64;
+## new
 
-## &#64;GIT_EMAIL&#64;
-## &#64;GIT_USER&#64;
+    new( options )
 
-If you've done something like:
+Any of the options passed to the `new` method can also be set or
+retrieved use the `set_NAME` or `get_NAME` methods.
 
-```
-git config --global user.name "Fred Flintstone"
-git config --global user.email "fflintstone@bedrock.org"
-```
+- css
 
-or
+    URL of a CSS file to add to head section of printed HTML.
 
-```
-git config --local user.name "Fred Flintstone"
-git config --local user.email "fflintstone@bedrock.org"
-```
+- engine
 
-...then you can expect to see those in your markdown, otherwise don't
-use the tags.
+    One of `github` or `text_markdown`.
 
-[Back to Top](#table-of-contents)
+    default: github
 
-## &#64;TOC&#64;
+- git\_user
 
-Add this tag anywhere in your markdown in include a table of contents.
+    Name of the git user that is used in the `GIT_USER` tag.
 
-## &#64;TOC_BACK(optional text)&#64;
+- git\_email
 
-Add &#64;TOC_BACK&#64; anywhere in your markdown template to insert an
-internal link back to the table of contents.
+    Email address of the git user that is used in the `GIT_EMAIL` tag.
 
-@`TOC_BACK`@
+- infile
 
-@`TOC_BACK(Back to Index)`@
+    Path to a file in markdow format.
 
-[Back to Top](#table-of-contents)
+- markdown
 
-## Custom TOC Title
+    Text of the markdown to be rendered.
 
-Use the `--no-title` option if you don't want the script to insert a
-header for the TOC.
-Use the `--title` option if you want a custom header for the TOC.
+- mode
 
-## Prevent heading from being included in table of contents
+    If using the GitHub API, mode can be either `gfm` or `markdown`.
 
-Precede the heading level with bang (!) and that heading will not be
-included in the table of contents.
+    default: markdown
 
-[Back to Top](#table-of-contents)
+- no\_title
 
-# Rendering
+    Boolean that indicates that no title should be added to the table of
+    contents.
 
-Using the [GiHub rendering
-API](https://developer.github.com/v3/markdown/), you can create HTML
-pretty easily. So if you want to preview your markdown...you might try:
+    default: false
 
-```
-jq --slurp --raw-input '{"text": "\(.)", "mode": "markdown"}' < README.md | \
-  curl -s --data @- https://api.github.com/markdown
-```
+- title
 
-__...but alas you might find that your internal links don't work in
-that rendered HTML...__
+    Title to be used for the table of contents.
 
-Never fear...the `--render` option of this utility will go ahead and set that right for
-you and munge the HTML so that internal links really work...or at
-least they do for me.
+## finalize\_markdown
 
-```
-md-utils --render README.md > README.html
-```
+Updates the markdown by interpolating the custom keywords. Invoking this
+method will create a table of contents and replace keywords with their
+values.
 
-[Back to Top](#table-of-contents)
+Invoke this method prior to invoking `render_markdown`.
 
-# License
+Returns the [Markdown::Render](https://metacpan.org/pod/Markdown%3A%3ARender) object.
+
+## render\_markdown
+
+Passes the markdown to GitHub's markdown rendering engine. After
+invoking this method you can retrieve the processed html by invoking
+`get_html` or create a fully rendered HTML page using the `print_html`
+method.
+
+Returns the [Markdown::Render](https://metacpan.org/pod/Markdown%3A%3ARender) object.
+
+## print\_html
+
+    print_html(options)
+
+Outputs the fully rendered HTML page.
+
+- css
+
+    URL of a CSS style sheet to include in the head section. If no CSS
+    file option is passed a default CSS file will b used. If a CSS element
+    is passed but it is undefined or empty, then no CSS will be specified
+    in the final document.
+
+- title
+
+    Title to be added in the head section of the document. If no title
+    option is passed the name of the file will be use as the title. If an
+    title option is passed but is undefined or empty, no title element
+    will be added to the document.
+
+# AUTHOR
+
+Rob Lauer - rlauer6@comcast.net
+
+# LICENSE
 
 This software is licensed under the same terms as Perl.
 
-[Back to Top](#table-of-contents)
+# SEE OTHER
+
+[GitHub Markdown API](https://docs.github.com/en/rest/markdown)
+[Text::Markdown::Discount](https://metacpan.org/pod/Text%3A%3AMarkdown%3A%3ADiscount)
