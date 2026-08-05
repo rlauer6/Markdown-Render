@@ -266,9 +266,16 @@ critic: ## run perlcritic on all source files
 	fi; \
 	$(MAKE) check-syntax SYNTAX_CHECKING=on PERLTIDYRC="" PERLCRITICRC=""; \
         PERL_SCRIPTS=$$(find bin/ -name '*.pl'); \
-	$(PERLCRITIC) --profile="$(PERLCRITICRC)" $(PERL_MODULES); \
+	$(PERLCRITIC) --profile="$(PERLCRITICRC)" \
+	  --theme=$(PERLCRITIC_THEME) \
+	  --severity=$(PERLCRITIC_SEVERITY) \
+	  --profile="$(PERLCRITICRC)" $(PERL_MODULES); \
 	if [[ -n "$$PERL_SCRIPTS" ]]; then \
-	  $(PERLCRITIC) --profile="$(PERLCRITICRC)" $$PERL_SCRIPTS; \
+	  $(PERLCRITIC) 
+	    --profile="$(PERLCRITICRC)" $$PERL_SCRIPTS; \
+	    --theme=$(PERLCRITIC_THEME) \
+	    --severity=$(PERLCRITIC_SEVERITY) \
+	    --profile="$(PERLCRITICRC)" $$PERL_SCRIPTS; \
 	fi
 
 lint: ## run all linting tools (tidy + critic)

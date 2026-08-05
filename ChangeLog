@@ -1,3 +1,24 @@
+Wed Aug  5 10:08:13 2026  Rob Lauer  <rclauer@gmail.com>
+
+	[2.1.1]:
+	* release-notes.md: new
+	* release-notes/release-notes-2.1.1.md: new
+	* .includes/help.mk: updated by CPAN::Maker::Bootstrapper
+	* .includes/perl.mk: likewise
+	* .includes/release-notes.mk: likewise
+	* .includes/update.mk: likewise
+	* cpanfile: likewise
+	* Makefile: likewise
+	* VERSION: bump
+	* bin/markdown-render.in: Markdown::Render::CLI, not Markdown::Render
+	* lib/Markdown/Render/CLI.pm.in
+	(main)
+	- help|h
+	- set default command to render
+	* .includes/bash-completion.mk: new
+	* .includes/modulino.mk: new
+	* t/00-markdown-render-cli.t: new
+
 Thu Jul 23 11:49:47 2026  Rob Lauer  <rclauer@gmail.com>
 
 	[2.1.0]:

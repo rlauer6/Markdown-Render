@@ -177,7 +177,7 @@ sub main {
     css=s
     debug
     engine=s
-    help
+    help|h
     infile=s
     mode=s
     no-title
@@ -189,18 +189,23 @@ sub main {
     version
   );
 
-  my %commands = ( version => \&cmd_version, render => \&cmd_render );
+  my %commands = (
+    version => \&cmd_version,
+    render  => \&cmd_render,
+    default => 'render'
+  );
 
   my $cli = __PACKAGE__->new(
     option_specs    => \@option_specs,
     commands        => \%commands,
     default_options => { body => $TRUE, },
     extra_options   => [qw(git_email html)],
-  )->run();
+  );
 
   return $cli->run();
-
 }
+
+1;
 
 __END__
 
@@ -208,7 +213,7 @@ __END__
 
 =head1 USAGE
 
- md-utils.pl options [markdown-file]
+ markdown-render options [markdown-file]
 
 Utility to add a table of contents and other goodies to your GitHub
 flavored markdown.
@@ -231,10 +236,9 @@ flavored markdown.
 
 =head2 Examples
 
- md-utils.pl README.md.in > README.md
+ markdown-render README.md.in > README.md
 
- md-utils.pl -r README.md.in
-
+ markdown-render -r README.md.in
 
 =head2 Options
 

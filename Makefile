@@ -53,7 +53,7 @@ BASEDIR  ?= $(shell perl -M$(CONFIG_READER) -e 'print $(CONFIG_READER)->new("$(C
 
 MIN_PERL_VERSION ?= 5.010
 
-MIN_PERL_VERSION_FLAG := $(shell v=$$(dnk get .min-perl-version < buildspec.yml 2>/dev/null); [[ -n "$$v" ]] && echo "-m $$v")
+MIN_PERL_VERSION_FLAG := $(shell v=$$(test -e buildspec.yml && dnk get .min-perl-version < buildspec.yml 2>/dev/null); [[ -n "$$v" ]] && echo "-m $$v")
 
 ifeq ($(SCANDEPS),)
   SCAN = OFF
@@ -90,12 +90,12 @@ DEPS += \
     cpanfile \
     test-requires \
     $(UNIT_TEST_NAME) \
-    update-available \
     ChangeLog
 
 .DEFAULT_GOAL := $(TARBALL)
 
-all: update-available 
+.PHONY: all
+all: $(TARBALL)
 
 include .includes/perl.mk
 
@@ -113,15 +113,24 @@ bin/%: bin/%.in
 quick: ## quick build, turns off scanning, perltidy, perlcritic
 	$(NO_ECHO)$(MAKE) SCAN=off LINT=off
 
-cpanfile: requires test-requires 
-	$(NO_ECHO)if [[ -e requires ]] && [[ -e test-requires ]]; then \
-	  $(CPAN_MAKER) create-cpanfile test-requires requires -o $@; \
-	else \
-	  echo >&2 "ERROR: make sure SCAN=on to produce requires, test-requires"; \
-	fi
+.INTERMEDIATE: cpanfile.requires cpanfile.suggests cpanfile.recommends
 
-$(TARBALL): $(DEPS) \
-    check-syntax \
+cpanfile.requires: requires test-requires
+	$(NO_ECHO)$(CPAN_MAKER) create-cpanfile --dependency-type requires $+ -o $@;
+
+cpanfile.suggests: suggests
+	$(NO_ECHO)$(CPAN_MAKER) create-cpanfile --dependency-type suggests $< -o $@;
+
+cpanfile.recommends: recommends
+	$(NO_ECHO)$(CPAN_MAKER) create-cpanfile --dependency-type recommends $< -o $@;
+
+cpanfile: cpanfile.requires cpanfile.suggests cpanfile.recommends 
+	$(NO_ECHO)rm -f $@; \
+	for a in $+; do \
+	  cat $$a >>$@; \
+	done
+
+$(TARBALL): $(DEPS) | update-available \
     $(if $(tidy_on), $(PERL_MODULES:%=%.tdy) $(PERL_BIN_FILES:%=%.tdy)) \
     $(if $(critic_on), $(PERL_MODULES:%=%.crit) $(PERL_BIN_FILES:%=%.crit))
 	$(NO_ECHO)if [[ -z "$(NO_COLOR)" ]]; then \
@@ -171,7 +180,7 @@ README.md: $(MODULE_PATH)
 	  trap 'rm -f $$tmpfile' EXIT; \
 	  echo "@TOC@" > $$tmpfile; \
 	  $(POD2MARKDOWN) $< >> $$tmpfile; \
-	  $(MD_UTILS) $$tmpfile > $@; \
+	  $(MD_UTILS) $$tmpfile > $@ || true; \
 	fi
 else
 # If README.md.in DOES exist, use MD_UTILS on the template
@@ -184,21 +193,11 @@ README.md: README.md.in
 	fi
 endif
 
-modulino.tmpl:
-	$(NO_ECHO)modulino_path=$$(perl -MFile::ShareDir=dist_file -e 'print dist_file(q{CPAN-Maker-Bootstrapper}, q{modulino.tmpl});' 2>/dev/null); \
-	cp $$modulino_path $@
+-include .includes/modulino.mk
 
-.PHONY: modulino
-modulino: modulino.tmpl ## creates a bash script that calls your modulino (MODULE_NAME=module ALIAS=name)
-	$(NO_ECHO)trap 'rm -f modulino.tmpl' EXIT; \
-	MODULE_NAME="$(MODULE_NAME)"; \
-	ALIAS="$${ALIAS:-$$MODULE_NAME}"; \
-	binfile=$$(echo "$$ALIAS" | perl -npe 's/::/\-/g;'); \
-	modulino="bin/$${binfile,,}"; \
-	sed -e "s/[@]MODULE_NAME[@]/$$MODULE_NAME/" \
-	    -e "s/[@]ALIAS[@]/$$ALIAS/" $< > "$${modulino}.in"; \
-	test -e .gitignore && { grep -q "$$modulino" .gitignore || echo "$$modulino" >> .gitignore; }; \
-	echo "$$modulino"
+-include .includes/bash-completion.mk
+
+.INTERMEDIATE: requires.raw recommends.raw suggests.raw test-requires.raw
 
 requires.raw recommends.raw suggests.raw &: $(SOURCE_FILES) ## single scan producing all three library dependency tiers
 	$(NO_ECHO)printf '%s\n' $(SOURCE_FILES) > file_list.tmp; \
@@ -230,11 +229,7 @@ test-requires.raw: $(TESTS) ## scan of t/ for test-only dependencies (requires t
 	  if test -e "$@"; then \
 	    cp "$@" "$@.xxx"; \
 	  fi; \
-	  if test -e "$@.xxx"; then \
-	    cmb filter "$<" "$@.skip" "$@.xxx" > $@; \
-	  else \
-	    cp "$<" $@; \
-	  fi; \
+	  cmb filter "$<" "$@.skip" "$@.xxx" > $@; \
 	fi
 
 requires: $(SOURCE_FILES) ## creates or updates the `requires` file used to populate PREQ_PM section of the Makefile.PL
@@ -346,11 +341,13 @@ build-ci:
 	test -x "$$(pwd)/$(BUILDER)" || (echo "no builder. set BUILDER or run make workflow to install builder" && exit 1); \
 	repo_url="https://github.com/$(GITHUB_USER)/$(PROJECT_NAME).git"; \
 	start_time=$$(date +%s); \
-	$(DOCKER) run --rm -v "$$(pwd)/$(BUILDER):/builder:ro" \
+	$(DOCKER) run --rm \
+	  -v "$$(pwd)/$(BUILDER):/builder:ro" \
+	  -v "$$(pwd):/$$(basename $$(pwd))" \
 	  -e GITHUB_REF_NAME=$(BRANCH) \
 	  -e INSTALLER=$(INSTALLER) \
-	  $(DOCKER_BUILD_IMAGE) \
-	  /bin/bash /builder "$$repo_url" 2>&1 | tee $(BUILD_LOG); \
+	  -e REPO=$$(basename  -s .git "$$(git remote get-url origin)") \
+	  $(DOCKER_BUILD_IMAGE) /builder "$$repo_url" 2>&1 | tee $(BUILD_LOG); \
 	end_time=$$(date +%s); \
 	total_time=$$(($$end_time - $$start_time)); \
 	echo "Build time: $$(date -u -d @$$total_time +%T)" >> $(BUILD_LOG); \
@@ -370,7 +367,7 @@ check: $(GSOURCE_FILES) ## syntax check and create source from .in file
 # so there's no chicken-and-egg with $(PERL_MODULES) needing to be
 # built before deps.mk can be regenerated, and 'make clean' can never
 # trigger a rebuild through this include (clean doesn't touch .pm.in).
-deps.mk: $(SOURCE_FILES:%=%.in)
+deps.mk: $(SOURCE_FILES)
 	$(NO_ECHO)cmb create-deps > $@
 
 .PHONY: package

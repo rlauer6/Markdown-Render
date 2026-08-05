@@ -11,3 +11,4 @@ requires "IO::Socket", "0";
 requires "JSON", "4.10";
 requires "Net:SSLeay", "0";
 requires "Readonly", "2.05";
+suggests "Text::Markdown::Discount", "0.18";
